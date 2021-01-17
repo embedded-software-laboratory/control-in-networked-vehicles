@@ -26,26 +26,26 @@
 % 
 % Author: i11 - Embedded Software, RWTH Aachen University
 
-function interp = path_interpolation(t_now, start_point, end_point)
+function interp = path_interpolation(s_queried, start_point, end_point)
     
-    t_start = (start_point.t) / 1e9;
-    t_end = (end_point.t) / 1e9;
+    s_start = start_point.s;
+    s_end = end_point.s;
 
-    delta_t = t_end - t_start;
-    tau = (t_now - t_start) / delta_t;
+    delta_s = s_end - s_start;
+    tau = (s_queried - s_start) / delta_s;
     
     tau2 = tau * tau;
     tau3 = tau * tau2;
     
-    position_start_x = start_point.px;
-    position_start_y = start_point.py;
-    position_end_x = end_point.px;
-    position_end_y = end_point.py;
+    position_start_x = start_point.pose.x;
+    position_start_y = start_point.pose.y;
+    position_end_x = end_point.pose.x;
+    position_end_y = end_point.pose.y;
     
-    velocity_start_x = start_point.vx * delta_t;
-    velocity_start_y = start_point.vy * delta_t;
-    velocity_end_x = end_point.vx * delta_t;
-    velocity_end_y = end_point.vy * delta_t;
+    velocity_start_x = cos(start_point.pose.yaw) * delta_s;
+    velocity_start_y = sin(start_point.pose.yaw) * delta_s;
+    velocity_end_x = cos(end_point.pose.yaw) * delta_s;
+    velocity_end_y = sin(end_point.pose.yaw) * delta_s;
     
     
     % Hermite spline coefficients
@@ -68,10 +68,10 @@ function interp = path_interpolation(t_now, start_point, end_point)
     
     position_x     =  position_start_x *   p0 + velocity_start_x *   m0 + position_end_x *   p1 + velocity_end_x *   m1;
     position_y     =  position_start_y *   p0 + velocity_start_y *   m0 + position_end_y *   p1 + velocity_end_y *   m1;
-    velocity_x     = (position_start_x *  dp0 + velocity_start_x *  dm0 + position_end_x *  dp1 + velocity_end_x *  dm1) / delta_t;
-    velocity_y     = (position_start_y *  dp0 + velocity_start_y *  dm0 + position_end_y *  dp1 + velocity_end_y *  dm1) / delta_t;
-    acceleration_x = (position_start_x * ddp0 + velocity_start_x * ddm0 + position_end_x * ddp1 + velocity_end_x * ddm1) / (delta_t*delta_t);
-    acceleration_y = (position_start_y * ddp0 + velocity_start_y * ddm0 + position_end_y * ddp1 + velocity_end_y * ddm1) / (delta_t*delta_t);
+    velocity_x     = (position_start_x *  dp0 + velocity_start_x *  dm0 + position_end_x *  dp1 + velocity_end_x *  dm1) / delta_s;
+    velocity_y     = (position_start_y *  dp0 + velocity_start_y *  dm0 + position_end_y *  dp1 + velocity_end_y *  dm1) / delta_s;
+    acceleration_x = (position_start_x * ddp0 + velocity_start_x * ddm0 + position_end_x * ddp1 + velocity_end_x * ddm1) / (delta_s*delta_s);
+    acceleration_y = (position_start_y * ddp0 + velocity_start_y * ddm0 + position_end_y * ddp1 + velocity_end_y * ddm1) / (delta_s*delta_s);
     
     yaw = atan2(velocity_y, velocity_x);
     speed = sqrt(velocity_x*velocity_x + velocity_y*velocity_y);
@@ -87,4 +87,3 @@ function interp = path_interpolation(t_now, start_point, end_point)
     interp.speed = speed;
     interp.curvature = curvature;
 end
-
