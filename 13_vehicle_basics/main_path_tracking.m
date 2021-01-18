@@ -34,25 +34,9 @@ function main_path_tracking(vehicle_id)
     
     matlabDomainId = 1;
     % matlabParticipant implicitly needed
-    [matlabParticipant, reader_vehicleStateList, ~, reader_systemTrigger, writer_readyStatus, trigger_stop] = init_script(matlabDomainId);
+    [matlabParticipant, reader_vehicleStateList, ~, writer_vehicleCommandPathTracking, reader_systemTrigger, writer_readyStatus, trigger_stop] = init_script(matlabDomainId);
 
 
-    %% variables for DDS communication
-    % DDS Participant for wlan communication with vehicles
-    labDomainId = str2double(getenv('DDS_DOMAIN'));
-    labParticipant = DDS.DomainParticipant(...
-        'BuiltinQosLib::Baseline.6.0.0',...
-        labDomainId...
-    );
-    
-    % Control
-    topic_vehicleCommandPathTracking = 'vehicleCommandPathTracking';
-    writer_vehicleCommandPathTracking = DDS.DataWriter(...
-        DDS.Publisher(labParticipant),...
-        'VehicleCommandPathTracking',...
-        topic_vehicleCommandPathTracking...
-    );
-    
     %% Sync start with infrastructure
     % Send ready signal
     % Signal needs to be sent for all assigned vehicle ids
@@ -78,15 +62,13 @@ function main_path_tracking(vehicle_id)
     %% Run the HLC
     % Set reader properties
     reader_vehicleStateList.WaitSet = true;
-    reader_vehicleStateList.WaitSetTimeout = 1; % [s]
+    reader_vehicleStateList.WaitSetTimeout = 5; % [s]
 
-    % Define reference trajectory
-    map_center_x = 2.25;    % [m]
-    map_center_y = 2.0;     % [m]
-    path_px    = [     1,      0,     -1,      0,      1] + map_center_x;   % [m]
-    path_py    = [     0,      1,      0,     -1,      0] + map_center_y;   % [m]
-    path_yaw   = [1*pi/2, 2*pi/2, 3*pi/2,      0, 1*pi/2];                  % [rad]
-    path_s     = [     0, 1*pi/2, 2*pi/2, 3*pi/2, 4*pi/2];                  % [m]
+    % Reference path generation
+    common_functions_path = '../common';
+    assert(isfolder(common_functions_path));
+    addpath(common_functions_path);
+    path_points = get_path_points('circle');
     
     % Middleware period for valid_after stamp
     dt_period_nanos = 250e6;
@@ -100,25 +82,14 @@ function main_path_tracking(vehicle_id)
         
         vehicle_command_path_tracking = VehicleCommandPathTracking;
         vehicle_command_path_tracking.vehicle_id = uint8(vehicle_id);
-        vehicle_command_path_tracking.speed = 1.0;
-        path_points = [];
-        for i = 1:numel(path_px)
-            path_point = PathPoint;
-            path_point.pose.x = path_px(i);
-            path_point.pose.y = path_py(i);
-            path_point.pose.yaw = path_yaw(i);
-            path_point.s = path_s(i);
-
-            path_points = [path_points, path_point];
-        end
         vehicle_command_path_tracking.path = path_points;
-
+        vehicle_command_path_tracking.speed = 1.0;
         vehicle_command_path_tracking.header.create_stamp.nanoseconds = ...
-            uint64(sample.t_now);
+            uint64(sample(end).t_now);
         vehicle_command_path_tracking.header.valid_after_stamp.nanoseconds = ...
-            uint64(sample.t_now + dt_period_nanos);
+            uint64(sample(end).t_now + dt_period_nanos);
         writer_vehicleCommandPathTracking.write(vehicle_command_path_tracking);
-
+        
         % Check for stop signal
         [~, got_stop] = read_system_trigger(reader_systemTrigger, trigger_stop);
     end

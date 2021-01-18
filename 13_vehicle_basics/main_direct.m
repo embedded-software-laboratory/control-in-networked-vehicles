@@ -24,7 +24,7 @@
 % 
 % Author: i11 - Embedded Software, RWTH Aachen University
 
-function main(vehicle_id)    
+function main_direct(vehicle_id)
     % Initialize data readers/writers...
     common_cpm_functions_path = fullfile( ...
         getenv('HOME'), 'dev/software/high_level_controller/examples/matlab' ...
@@ -33,7 +33,7 @@ function main(vehicle_id)
     addpath(common_cpm_functions_path);
     
     matlabDomainId = 1;
-    [matlabParticipant, reader_vehicleStateList, ~, reader_systemTrigger, writer_readyStatus, trigger_stop] = init_script(matlabDomainId);
+    [matlabParticipant, reader_vehicleStateList, ~, ~, reader_systemTrigger, writer_readyStatus, trigger_stop] = init_script(matlabDomainId);
     
     topic_vehicleCommandDirect = 'vehicleCommandDirect';
     writer_vehicleCommandDirect = DDS.DataWriter(...
@@ -65,7 +65,7 @@ function main(vehicle_id)
     %% Run the HLC
     % Set reader properties
     reader_vehicleStateList.WaitSet = true;
-    reader_vehicleStateList.WaitSetTimeout = 1; % [s]
+    reader_vehicleStateList.WaitSetTimeout = 5; % [s]
     
     while (~got_stop)
         % Read vehicle states
