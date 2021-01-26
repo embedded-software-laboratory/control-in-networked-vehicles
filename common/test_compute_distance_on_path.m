@@ -3,6 +3,17 @@ function tests = test_compute_distance_on_path
 end
 
 
+function setupOnce(testCase)  % do not change function name
+    % add DDS structure definitions to the search path
+    common_cpm_functions_path = fullfile( ...
+        getenv('HOME'), 'dev/software/cpm_lib/dds_idl_matlab' ...
+    );
+
+    assert(isfolder(common_cpm_functions_path), 'Missing folder "%s".', common_cpm_functions_path);
+    addpath(common_cpm_functions_path);
+end
+
+
 % this test determines if compute_distance_on_path returns the correct
 % s_query value when given an interpolated point
 function test_reversibility(testCase)
