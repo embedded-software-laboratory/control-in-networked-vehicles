@@ -1,5 +1,3 @@
-%UNTITLED2 Summary of this function goes here
-%   Detailed explanation goes here
 % MIT License
 % 
 % Copyright (c) 2020 Lehrstuhl Informatik 11 - RWTH Aachen University
@@ -27,7 +25,9 @@
 % Author: i11 - Embedded Software, RWTH Aachen University
 
 function interp = path_interpolation(s_queried, start_point, end_point)
-    
+%UNTITLED2 Summary of this function goes here
+%   Detailed explanation goes here
+
     s_start = start_point.s;
     s_end = end_point.s;
 
@@ -54,36 +54,6 @@ function interp = path_interpolation(s_queried, start_point, end_point)
     p1 = -2*tau3 + 3*tau2;
     m1 = tau3 - tau2;
     
-    % Hermite spline derivative coefficients
-    dp0 = 6*tau2 - 6*tau;
-    dm0 = 3*tau2 - 4*tau + 1;
-    dp1 = -6*tau2 + 6*tau;
-    dm1 = 3*tau2 - 2*tau;
-    
-    % Hermite spline second derivative coefficients
-    ddp0 = 12*tau - 6;
-    ddm0 = 6*tau - 4;
-    ddp1 = -12*tau + 6;
-    ddm1 = 6*tau - 2;    
-    
-    position_x     =  position_start_x *   p0 + velocity_start_x *   m0 + position_end_x *   p1 + velocity_end_x *   m1;
-    position_y     =  position_start_y *   p0 + velocity_start_y *   m0 + position_end_y *   p1 + velocity_end_y *   m1;
-    velocity_x     = (position_start_x *  dp0 + velocity_start_x *  dm0 + position_end_x *  dp1 + velocity_end_x *  dm1) / delta_s;
-    velocity_y     = (position_start_y *  dp0 + velocity_start_y *  dm0 + position_end_y *  dp1 + velocity_end_y *  dm1) / delta_s;
-    acceleration_x = (position_start_x * ddp0 + velocity_start_x * ddm0 + position_end_x * ddp1 + velocity_end_x * ddm1) / (delta_s*delta_s);
-    acceleration_y = (position_start_y * ddp0 + velocity_start_y * ddm0 + position_end_y * ddp1 + velocity_end_y * ddm1) / (delta_s*delta_s);
-    
-    yaw = atan2(velocity_y, velocity_x);
-    speed = sqrt(velocity_x*velocity_x + velocity_y*velocity_y);
-    curvature = (velocity_x * acceleration_y - velocity_y * acceleration_x) / (speed*speed*speed);
-    
-    interp.position_x = position_x;
-    interp.position_y = position_y;
-    interp.velocity_x = velocity_x;
-    interp.velocity_y = velocity_y;
-    interp.acceleration_x = acceleration_x;
-    interp.acceleration_y = acceleration_y;
-    interp.yaw = yaw;
-    interp.speed = speed;
-    interp.curvature = curvature;
+    interp.position_x =  position_start_x *   p0 + velocity_start_x *   m0 + position_end_x *   p1 + velocity_end_x *   m1;
+    interp.position_y =  position_start_y *   p0 + velocity_start_y *   m0 + position_end_y *   p1 + velocity_end_y *   m1;
 end
