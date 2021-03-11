@@ -60,7 +60,7 @@ function test_reversibility(testCase)
         interp = path_interpolation(s_query, path_points(i_path_point), path_points(i_path_point + 1));
         
         % test function
-        s_calculated = compute_distance_on_path([interp.position_x, interp.position_y], path_points);
+        [s_calculated, ~] = compute_distance_on_path([interp.position_x, interp.position_y], path_points, 0, 0);
         
         s_in = [s_in, s_query];
         s_out = [s_out, s_calculated];
@@ -68,5 +68,5 @@ function test_reversibility(testCase)
         s_query = s_query + ds;
     end
 
-    verifyEqual(testCase, s_out, s_in, 'RelTol', 1e-12);
+    verifyEqual(testCase, s_out, s_in, 'AbsTol', 1e-12);
 end
