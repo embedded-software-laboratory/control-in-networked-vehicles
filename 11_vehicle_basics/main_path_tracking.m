@@ -77,7 +77,10 @@ function main_path_tracking(vehicle_id)
     while (~got_stop)
         % Read vehicle states
         [sample, ~, sample_count, ~] = reader_vehicleStateList.take();
-        assert(sample_count == 1, 'Received %d samples, expected 1', sample_count);
+        if (sample_count > 1)
+            warning('Received %d samples, expected 1. Correct middleware period? Missed deadline?', sample_count);
+            sample = sample(end); % Use latest sample
+        end
         fprintf('Received sample at time: %d\n',sample.t_now);
         
         vehicle_command_path_tracking = VehicleCommandPathTracking;
