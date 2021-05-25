@@ -2,8 +2,10 @@ function [ model ] = get_longitudinal_model(Ts)
 
 A = 0;
 B = 0;
-C = 0;
-D = 0;
+nx = size(A,2);
+C = eye(2,nx);
+nu = size(B,2);
+D = zeros(2,nu);
 
 vehicle_model_ss = ss(A, B, C, D);
 vehicle_model_ss.InputDelay = 0;

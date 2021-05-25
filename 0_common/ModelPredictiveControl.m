@@ -6,17 +6,17 @@ classdef ModelPredictiveControl < handle
 %   HP is the prediction horizon specified as a scalar number.
 %   HU is the control horizon specified as a scalar number.
 %   UMIN is the minimum value for the control input,
-%   specified as a scalar number.
+%   dimensions (nu,1).
 %   UMAX is the maximum value for the control input,
-%   specified as a scalar number.
+%   dimensions (nu,1).
 %   DUMIN is the minimum value for the control input change per time step,
 %   specified as a scalar number.
 %   DUMAX is the maximum value for the control input change per time step,
 %   specified as a scalar number.
 %   YMIN is the minimum value of the system output over the prediction horizon.
 %   Needs to have dimension (ny*HP,1), where ny is the number of system outputs.
-%   The values are sorted by output y and then time k, so the vector is stacked
-%   of ny outputs at time k+1, k+2, ... k+HP.
+%   The vector is ny outputs stacked at each time k+1, k+2, ... k+HP.
+%   E.g. [y_1(k+1),...,y_ny(k+1), y_1(k+2),...,y_ny(k+1), ..., y_1(k+HP),...,y_ny(k+HP)]'
 %   Can also be set at each control step in function STEP.
 %   YMAX is the maximum value of the system output over the prediction horizon.
 %   Similar to YMIN.
@@ -249,15 +249,15 @@ classdef ModelPredictiveControl < handle
             options = optimset('Display', 'off', 'LargeScale', 'off');
             Delta_u_sol = quadprog(h,f,Aineq,bineq,[],[],lb,ub,[],options);
             % Delta_u_sol is
-            % [ u_1(k),
-            %   u_2(k),
-            %      ...,   
+            % [u_1(k),
+            %  u_2(k),
+            %  ...,   
             %  u_nu(k),
             %  u_1(k+1),
-            %       ...,
-            % u_nu(k+1),
-            %       ...,
-            % u_nu(k+hu)]'
+            %  ...,
+            %  u_nu(k+1),
+            %  ...,
+            %  u_nu(k+hu)]'
             if (isempty(Delta_u_sol))
                 warning("No feasible solution found, setting v=0.");
                 Delta_u_sol = zeros(obj.nu*obj.hu,1);
