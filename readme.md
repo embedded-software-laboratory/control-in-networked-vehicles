@@ -4,3 +4,4 @@ This repository provides a starting point for the lab exercises of the course "C
 The folder `0_common` provides functionality which is shared between exercises. The other folders are numbered corresponding to the exercise sheet and task.
 
 Run the lab exercises in the [CPM Lab](https://github.com/embedded-software-laboratory/cpm_lab).
+The folder in which this code resides is expected to be in `software/high_level_controller/`.

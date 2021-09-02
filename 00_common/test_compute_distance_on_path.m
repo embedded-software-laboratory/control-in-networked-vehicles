@@ -6,7 +6,7 @@ end
 function setupOnce(testCase)  % do not change function name
     % add DDS structure definitions to the search path
     common_cpm_functions_path = fullfile( ...
-        getenv('HOME'), 'dev/software/cpm_lib/dds_idl_matlab' ...
+        '..','..','..','cpm_lib','dds_idl_matlab' ...
     );
 
     assert(isfolder(common_cpm_functions_path), 'Missing folder "%s".', common_cpm_functions_path);
@@ -43,8 +43,8 @@ function test_reversibility(testCase)
     ds = 0.1;
     s_max = 4*pi/2;
     i_path_point = 1;
-    s_in = [];
-    s_out = [];
+    s_expected = [];
+    s_actual = [];
     
     while s_query < s_max
         %assert(i_path_point < size(path) - 1);
@@ -60,13 +60,13 @@ function test_reversibility(testCase)
         interp = path_interpolation(s_query, path_points(i_path_point), path_points(i_path_point + 1));
         
         % test function
-        [s_calculated, ~] = compute_distance_on_path([interp.position_x, interp.position_y], path_points, 0, 0);
+        s_on_path = compute_distance_on_path([interp.position_x, interp.position_y], path_points);
         
-        s_in = [s_in, s_query];
-        s_out = [s_out, s_calculated];
+        s_expected = [s_expected, s_query];
+        s_actual = [s_actual, s_on_path];
         
         s_query = s_query + ds;
     end
 
-    verifyEqual(testCase, s_out, s_in, 'AbsTol', 1e-12);
+    verifyEqual(testCase, s_actual, s_expected, 'AbsTol', 1e-3);
 end

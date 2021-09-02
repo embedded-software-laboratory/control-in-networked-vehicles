@@ -1,4 +1,4 @@
-function [ model ] = get_longitudinal_model(Ts)
+function [ model ] = longitudinal_model(Ts)
 
 A = 0;
 B = 0;
