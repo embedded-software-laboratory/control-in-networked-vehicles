@@ -19,35 +19,14 @@ common_functions_path = '../common';
 assert(isfolder(common_functions_path));
 addpath(common_functions_path);
 
-% Controller setup
-vehicle_ids = cell2mat(varargin);
-Ts = 0.1;   % sample time [s]
-vehicle_model = get_longitudinal_model(Ts);
-
-% Reference path generation
-path_points = get_path_points('outer_lane');
-
-% Store data for visualization
-yRefTotal = zeros(size(vehicle_model.C,1),0);
-yTotal = zeros(size(vehicle_model.C,1),0);
-uTotal = zeros(size(vehicle_model.B,2),0);
-t = zeros(1,0);
-% loop variables
-loop_init = false;
-y = zeros(size(vehicle_model.C,1),1);
-yref = @(t) [t;0];
-t_start_nanos = 0;
-
-
 % Set reader properties
 reader_vehicleStateList.WaitSet = true;
 reader_vehicleStateList.WaitSetTimeout = 5; % [s]
-% Middleware period for valid_after stamp
-dt_period_nanos = uint64(Ts*1e9);
 
 %% Sync start with infrastructure
 % Send ready signal for all assigned vehicle ids
 disp('Sending ready signal');
+vehicle_ids = cell2mat(varargin);
 for i_vehicle = vehicle_ids
     ready_msg = ReadyStatus;
     ready_msg.source_id = strcat('hlc_', num2str(i_vehicle));
@@ -64,6 +43,12 @@ while (~got_stop && ~got_start)
     [got_start, got_stop] = read_system_trigger(reader_systemTrigger, trigger_stop);
 end
 %% Run the HLC
+% loop variables
+t = zeros(1,0);
+loop_init = false;
+t_start_nanos = 0;
+dt_valid_after = 0;
+yref = @(t) [t;0];
 % Main control loop
 while (~got_stop)
     % Measure system output
@@ -71,15 +56,38 @@ while (~got_stop)
     [sample, ~, sample_count, ~] = reader_vehicleStateList.take();
     if (sample_count > 1)
         warning('Received %d samples, expected 1. Correct middleware period? Missed deadline?', sample_count);
+        sample = sample(end);
     end
-    y = y;
+    
     % Compute control action
     % ----------------------
     if loop_init == false
-        t_start_nanos = sample(end).t_now;
+        t_start_nanos = sample.t_now;
+        
+        % Middleware period for valid_after stamp
+        dt_period_nanos = uint64(sample.period_ms*1e6);
+        dt_max_comm_delay = uint64(100e6);
+        if dt_period_nanos >= dt_max_comm_delay
+            dt_valid_after = dt_period_nanos;
+        else
+            dt_valid_after = dt_max_comm_delay;
+        end
+        % Controller setup
+        Ts = sample.period_ms*1e-3;   % sample time [s]
+        vehicle_model = longitudinal_model(Ts);
+
+        % Reference path generation
+        path_points = outer_lane_path();
+
+        % Store data for visualization
+        yRefTotal = zeros(size(vehicle_model.C,1),0);
+        yTotal = zeros(size(vehicle_model.C,1),0);
+        uTotal = zeros(size(vehicle_model.B,2),0);
+        y = zeros(size(vehicle_model.C,1),1);
+        
         loop_init = true;
     end
-    t_rel = double(sample(end).t_now - t_start_nanos)*1e-9;
+    t_rel = double(sample.t_now - t_start_nanos)*1e-9;
     u = u;
     
     % Store vaules
@@ -95,9 +103,9 @@ while (~got_stop)
     vehicle_command_path_tracking.path = path_points;
     vehicle_command_path_tracking.speed = u;
     vehicle_command_path_tracking.header.create_stamp.nanoseconds = ...
-        uint64(sample(end).t_now);
+        uint64(sample.t_now);
     vehicle_command_path_tracking.header.valid_after_stamp.nanoseconds = ...
-        uint64(sample(end).t_now + dt_period_nanos);
+        uint64(sample.t_now + dt_valid_after);
     writer_vehicleCommandPathTracking.write(vehicle_command_path_tracking);
     
     % Check for stop signal
