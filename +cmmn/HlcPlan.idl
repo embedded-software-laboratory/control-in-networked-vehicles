@@ -1,0 +1,10 @@
+#ifndef HLCPLAN_IDL
+#define HLCPLAN_IDL
+
+struct HlcPlan 
+{
+    octet vehicle_id; //@key
+    // TODO extend
+};
+#endif
+

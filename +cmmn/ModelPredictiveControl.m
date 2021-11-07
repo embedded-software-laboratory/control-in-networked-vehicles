@@ -1,4 +1,4 @@
-classdef ModelPredictiveControl < handle
+classdef ModelPredictiveControl < cmmn.InterfaceController
 %MODELPREDICTIVECONTROL  Create a model predictive controller
 %   mpcObj = MODELPREDICTIVECONTROL(MODEL,HP,HU,UMIN,UMAX,DUMIN,DUMAX,YMIN,YMAX,Q,R,Q_KALMAN,R_KALMAN)
 %   creates the MPC object where
@@ -42,10 +42,12 @@ classdef ModelPredictiveControl < handle
         % observer - observer of system states
         % See also KALMANFILTER
         observer
+        hp
+        hu
+        model
     end
     
     properties (Access=private)
-        model
         psi
         gamma
         theta
@@ -55,8 +57,6 @@ classdef ModelPredictiveControl < handle
         C_hp
         Q
         R
-        hp
-        hu
         nu
         ny
         umin
@@ -72,7 +72,7 @@ classdef ModelPredictiveControl < handle
     methods
         function obj = ModelPredictiveControl(model,hp,hu,umin,umax,dumin,dumax,ymin,ymax,q,r,Q_kalman,R_kalman)
             obj.model = model;
-            obj.observer = KalmanFilter(model,Q_kalman,R_kalman);
+            obj.observer = cmmn.KalmanFilter(model,Q_kalman,R_kalman);
 
             obj.hp = hp;
             obj.hu = hu;
@@ -140,7 +140,7 @@ classdef ModelPredictiveControl < handle
         end
 
 
-        function init_observer(obj,x_init)
+        function setup(obj,x_init)
             obj.observer.x_k_minus_one = x_init;
         end
 
@@ -190,7 +190,6 @@ classdef ModelPredictiveControl < handle
                 Aineq_umin...
             ];
 
-
             bineq_umax =   repmat(obj.umax, obj.hu, 1) - repmat(obj.u_k_minus_one, obj.hu, 1);
             bineq_umin = -(repmat(obj.umin, obj.hu, 1) - repmat(obj.u_k_minus_one, obj.hu, 1));
             bineq_u = [...
@@ -217,7 +216,6 @@ classdef ModelPredictiveControl < handle
             % y constraints
             Aineq_ymax =  obj.theta_y;
             Aineq_ymin = -obj.theta_y;
-
             
             Aineq_y = [...
                 Aineq_ymax;...
