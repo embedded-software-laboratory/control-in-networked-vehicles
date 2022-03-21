@@ -1,6 +1,6 @@
 function plot_platooning(vehicle_ids, dds_domain)
 % plot_platooning visualizes relevant data for the presentation of a platooning
-%   controller
+%   controller or a one-vehicle controller using pathtracking commands
 
 vehicle_ids = sort(vehicle_ids, 'descend');
 
@@ -49,8 +49,11 @@ close all;
 % Cost
 dis_cost = 0;
 vel_cost = 0;
+pos_cost = 0;
 q_vel = 1;
 q_dis = 1;
+q_pos = 1;
+
 
 %% t-v_in plot
 % get normalized reference t values
@@ -100,10 +103,15 @@ v_max = 1.5;
 plot(t, v_min*ones(size(t)), 'Color', [1, 0, 0]);
 plot(t, v_max*ones(size(t)), 'Color', [1, 0, 0]);
 
-plot(t,v0ref, 'Color', [0.6, 0.6, 0.6]);
+if nVeh > 1
+    plot(t,v0ref, 'Color', [0.6, 0.6, 0.6]);
+    legend(leg_a{:}, "v_{min}", "v_{max}", "v_{ref}");
+else
+    legend(leg_a{:}, "v_{min}", "v_{max}");
+end
 
 
-legend(leg_a{:}, "v_{min}", "v_{max}", "v_{ref}");
+
 hold off;
 xlim([0, t_max - t_min]);
 % ylim([0 v_max]);
@@ -155,15 +163,21 @@ v_max = 1.5;
 plot(t, v_min*ones(size(t)), 'Color', [1, 0, 0]);
 plot(t, v_max*ones(size(t)), 'Color', [1, 0, 0]);
 
-% Leader reference velocity plot
-plot(t,v0ref(t), 'Color', [0.6, 0.6, 0.6]);
+if nVeh > 1
+    % Leader reference velocity plot
+    plot(t,v0ref(t), 'Color', [0.6, 0.6, 0.6]);
+end
 
-
-title_str = sprintf("Output Velocity over Time, $J_v=%.5g$", vel_cost);
+if nVeh > 1
+    title_str = sprintf("Output Velocity over Time, $J_v=%.5g$", vel_cost);
+    legend(leg_a{:}, "v_{min}", "v_{max}", "v_{ref}");
+else
+    title_str = sprintf("Output Velocity over Time");
+    legend(leg_a{:}, "v_{min}", "v_{max}");
+end
 title(title_str,'Interpreter','LaTex','FontSize',14);
 xlabel('Time $t\ [s]$','Interpreter','LaTex');
 ylabel('Output Velocity $v\ [m/s]$','Interpreter','LaTex');
-legend(leg_a{:}, "v_{min}", "v_{max}", "v_{ref}");
 hold off;
 xlim([0, t_max - t_min]);
 % ylim([0 v_max] + 0.1*[-1 1]);
@@ -303,6 +317,74 @@ if nVeh>1
 
     % save as png
     saveas(gcf,'t-d.png');
+else
+    % only one vehicle
+    vehicle_id = vehicle_ids(1);
+    
+    % vehicle reference path
+    vehPath = dataByVehicle(vehicle_id).pathtracking(1).path(1,:);
+
+    % get t, x, and y coordinates from vehicle state commands
+    t = dataByVehicle(vehicle_id).state.create_stamp;
+    x = [dataByVehicle(vehicle_id).state.x];
+    y = [dataByVehicle(vehicle_id).state.y];
+
+    % only use those positions that happened during the path tracking
+    t = t - t_min;
+    index = (t >= 0 & t <= t_max - t_min);
+    t = t(index);
+    x = x(index);
+    y = y(index);
+    
+    s = zeros(length(t),1);
+    
+    % initialize MeasurementTransformer
+    mt = cmmn.MeasurementTransformer(vehPath, [vehicle_id]);
+    
+    % create pseudo vehicle state list
+    vehicle_state_list = VehicleStateList();
+    vehicle_state_list.state_list(1) = VehicleState();
+    vehicle_state_list.state_list(1).vehicle_id = vehicle_id;
+    vehicle_state_list.state_list(1).pose = Pose2D();
+    
+    for i = 1:length(t)
+        % transform current position to distance
+        vehicle_state_list.state_list(1).pose.x = x(i);
+        vehicle_state_list.state_list(1).pose.y = y(i);
+        % transform current position to distance
+        s_t = mt.measure_longitudinal(vehicle_state_list);
+        s(i) = s_t(1);
+    end
+    
+    % calculate reference position on path
+    y_ref = @(t) [s(1)+1.1*t - 0.5*sin(t)];
+    s_ref = y_ref(t);
+    
+    % calculate position cost
+    s_diff = arrayfun(@(s_1, s_2) cmmn.compute_rel_distance_on_path(vehPath, s_1, s_2), s, s_ref);
+    pos_cost = q_pos*(s_diff)'*(s_diff);
+    
+    % setup plot
+    figure('position',[0 0 1920 997],'color',[1 1 1]);
+    hold on;    
+    set(0, 'DefaultLineLineWidth', 1);
+    
+    % plot actual position
+    plot(t, s);
+    % and reference position over time
+    plot(t, s_ref, 'Color', [0.6, 0.6, 0.6]);
+    
+    legend("s_{"+vehicle_id+"}","s_{ref}");
+    hold off;
+    xlim([0, t_max - t_min]);
+    
+    title_str = sprintf("Position of vehicle over time, $J_p=%.5g$", pos_cost);
+    title(title_str,'Interpreter','LaTex','FontSize',14);
+    xlabel('Time $t\ [s]$','Interpreter','LaTex');
+    ylabel('Position $s\ [m]$','Interpreter','LaTex');
+
+    % save as png
+    saveas(gcf,'t-s.png');
 end
 
 end
