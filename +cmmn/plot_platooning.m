@@ -1,7 +1,8 @@
-function plot_platooning(vehicle_ids, dds_domain)
+function plot_platooning(vehicle_ids)
 % plot_platooning visualizes relevant data for the presentation of a platooning
 %   controller or a one-vehicle controller using pathtracking commands
 
+dds_domain = getenv('DDS_DOMAIN');
 vehicle_ids = sort(vehicle_ids, 'descend');
 
 % add visualization and idl folders to path
