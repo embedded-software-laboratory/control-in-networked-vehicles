@@ -147,20 +147,20 @@ classdef ModelPredictiveControl < cmmn.InterfaceController
 
         function [u,y] = step(obj,ym,ref,ymin,ymax)
             %STEP solves an optimization problem to generate control input u
-            % U: control input for the next timestep. dimensions=(nu,1)
-            % Y: output prediction as a vector of stacked vectors of y(k) for
-            %     timepoints k=1,...,Hp. dimensions=(ny*Hp,1)
+            % U: control input u(k). Dimensions=(nu,1)
+            % Y: output prediction [y(k+1); y(k+2); ...; y(k+Hp)]
+            %     Dimensions=(ny*Hp,1)
             % [U,Y] = STEP(YM, REF)
-            % YM: current measurement, dimensions=(ny,1)
-            % REF: reference for y over the prediction horizon,
+            % YM: current measurement y(k), dimensions=(ny,1)
+            % REF: reference [y_ref(k+1); y_ref(k+2); ...; y_ref(k+Hp)]
             %     dimensions=(ny*Hp,1). If dimensions=(ny,1), vector 
             %     will be repeated Hp times.
             % [U,Y] = STEP(YM, REF, YMIN, YMAX)
-            % as above, specification of output constraints possible
-            % YMIN: lower bound for y over the prediction horizon,
+            %     as above, specification of output constraints possible
+            % YMIN: lower bound [ymin(k+1); ymin(k+2); ...; ymin(k+Hp)],
             %     dimensions=(ny*Hp,1). If dimensions=(ny,1), vector 
             %     will be repeated Hp times.
-            % YMAX: upper bound for y over the prediction horizon,
+            % YMAX: upper bound [ymax(k+1); ymax(k+2); ...; ymax(k+Hp)],
             %     dimensions=(ny*Hp,1). If dimensions=(ny,1), vector 
             %     will be repeated Hp times.
             
